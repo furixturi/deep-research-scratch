@@ -1,4 +1,4 @@
-def run_planner_agent(prompt: str, config: dict) -> str:
+async def run_planner_agent(prompt: str, config: dict) -> str:
     """
     Run the planner agent with the provided prompt and configuration.
     

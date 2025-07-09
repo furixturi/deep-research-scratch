@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
+from .config_loader import load_default_config
 from .agent import run_agent
 
 app = FastAPI(title="Deep Research Agent Server")
+default_config = load_default_config()
 
 class AgentRequest(BaseModel):
     prompt: str
@@ -13,8 +15,10 @@ async def run_agent_endpoint(data: AgentRequest):
     """
     Endpoint to run the agent with the provided prompt and configuration.
     """
+    merged_config = {**default_config, **data.config}
+
     try:
-        response = await run_agent(prompt=data.prompt, config=data.config)
+        response = await run_agent(prompt=data.prompt, config=merged_config)
         return {"response": response}
     except Exception as e:
         return {"error": str(e)}
