@@ -1,4 +1,4 @@
-## Run the tool server from root
+## Run the agent server from root
 ```bash
 $ uvicorn src.api.main:app --reload
 ```

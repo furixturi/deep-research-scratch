@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from .agent import run_agent
 
-app = FastAPI(title="Deep Research Tool Server")
+app = FastAPI(title="Deep Research Agent Server")
 
 class AgentRequest(BaseModel):
     prompt: str
