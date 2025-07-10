@@ -1,15 +1,18 @@
 class Memory:
     def __init__(self):
-        self.steps = []
+        self.messages = []
+
+    def add_system_prompt(self, prompt: str):
+        self.messages.insert(0, {"role": "system", "content": prompt})
 
     def add_user_input(self, prompt: str):
-        self.steps.append({"role": "user", "content": prompt})
+        self.messages.append({"role": "user", "content": prompt})
 
     def add_model_step(self, content: str):
-        self.steps.append({"role": "model", "content": content})
+        self.messages.append({"role": "assistant", "content": content})
 
-    def add_step(self, type_: str, content: str):
-        self.steps.append({"type": type_, "content": content})
+    def add_tool_step(self, content: str):
+        self.messages.append({"role": "tool", "content": content})
 
-    def format_context(self):
-        return "\n".join(step["content"] for step in self.steps if "content" in step)
+    def get_messages(self):
+        return self.messages.copy()
