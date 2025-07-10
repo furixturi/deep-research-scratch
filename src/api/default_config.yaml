@@ -1,5 +1,24 @@
 agent_type: single_agent
-model: openai
+models: 
+  supported:
+    aoai:
+      - gpt-4o
+      - o3
+    openai:
+      - gpt-4o
+      - o3
+  single_agent:
+    provider: aoai
+    model: gpt-4o
+  planner_agent:
+    provider: aoai
+    model: o3
+  search_agent:
+    provider: aoai
+    model: gpt-4o
+  default:
+    provider: aoai
+    model: gpt-4o
 tools:
   search: 
     description: "Search the web for information"
