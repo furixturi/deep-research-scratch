@@ -1,6 +1,141 @@
-def call_model(prompt: str, config: dict) -> str:
-    return (
-        "Thought: I am a stub thought. Still, I should use a tool to answer.\n"
-        "Action: search\n"
-        "Action Input: NVIDIA revenue 2024"
+import os
+from openai import AzureOpenAI, OpenAI
+from dotenv import load_dotenv
+
+from api.config_loader import load_default_config
+
+load_dotenv()
+
+# Endpoints and credntials
+## AOAI
+AOAI_ENDPOINT = os.getenv("AOAI_ENDPOINT")
+AOAI_KEY = os.getenv("AOAI_KEY")
+AOAI_VERSION = os.getenv("AOAI_VERSION")
+## OpenAI
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
+
+# load default configuration
+# _default_config = load_default_config()
+_default_model_config = load_default_config().get("models", {})
+_supported_providers_models = _default_model_config.get("supported", {})
+
+
+# Model call dispatcher
+def call_model(messages: list, model_config: dict = {}, agent_id: str = "default") -> str:
+    """
+    Call the model with the provided messages and configuration.
+
+    Args:
+        messages (list): List of messages to send to the model.
+        model_config (dict): Configuration dictionary for the model call. 
+            E.g. {"provider": "aoai", "model": "gpt-4o"}
+        agent_id (str): Identifier for the agent, default is "default".
+
+    Returns:
+        str: The response from the model.
+    """
+    model_config = get_model_config(model_config, agent_id)
+    model_provider = model_config.get("provider", "")
+    model = model_config.get("model", "")
+
+    if model_provider not in _supported_providers_models:
+        raise ValueError(
+            f"Model provider '{model_provider}' is not supported. "
+            f"Supported providers are: {_supported_providers_models.keys()}"
+        )
+    if model not in _supported_providers_models.get(model_provider, []):
+        raise ValueError(
+            f"Model '{model}' is not supported for provider '{model_provider}'. "
+            f"Supported models are: {_supported_providers_models.get(model_provider, [])}"
+        )
+
+    if model_provider == "aoai":
+        return call_aoai(messages, model)
+    elif model_provider == "openai":
+        return call_openai(messages, model)
+    else:
+        raise ValueError(
+            f"Handler not implemented for model provider: {model_provider}"
+        )
+
+
+def get_model_config(model_config: dict, agent_id: str = "default") -> tuple[dict, list[str]]:
+    """
+    Get the model configuration from default_config.yaml then override with the provided config and agent ID.
+
+    Args:
+        config (dict): Configuration dictionary.
+        agent_id (str): Identifier for the agent, default is "default".
+
+    Returns:
+        dict: Model configuration dictionary
+    """
+    default_agent_model_config = _default_model_config.get(agent_id, {})
+    model_config = {**_default_model_config.get("default", {}), **default_agent_model_config, **model_config}
+    if not model_config:
+        raise ValueError(f"No model configuration found for agent ID: {agent_id}")
+
+    return model_config
+
+
+def call_aoai(messages: list, model: str) -> str:
+    """
+    Call the Azure OpenAI model with the provided messages.
+
+    Args:
+        messages (list): List of messages to send to the model.
+        model (str): The model name to use for the call.
+
+    Returns:
+        str: The response from the Azure OpenAI model.
+    """
+    client = AzureOpenAI(
+        azure_endpoint=AOAI_ENDPOINT,
+        api_key=AOAI_KEY,
+        api_version=AOAI_VERSION
     )
+    
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        max_tokens=4096,
+        temperature=1.0,
+        top_p=1.0,
+    )
+    
+    return response.choices[0].message.content
+
+
+def call_openai(messages: list, model: str) -> str:
+    """
+    Call the OpenAI model with the provided messages.
+
+    Args:
+        messages (list): List of messages to send to the model.
+        model (str): The model name to use for the call.
+
+    Returns:
+        str: The response from the OpenAI model.
+    """
+    client = OpenAI(api_key=OPENAI_KEY)
+    
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        max_tokens=4096,
+        temperature=1.0,
+        top_p=1.0,
+    )
+    
+    return response.choices[0].message.content
+
+
+##############
+#### STUB ####
+##############
+# def call_model(prompt: str, config: dict) -> str:
+#     return (
+#         "Thought: I am a stub thought. Still, I should use a tool to answer.\n"
+#         "Action: search\n"
+#         "Action Input: NVIDIA revenue 2024"
+#     )
