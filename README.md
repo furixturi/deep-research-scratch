@@ -43,7 +43,7 @@ The long-term awareness and observability system.
 - **UI/API**: CLI, or HTTP API for Open WebUI integration
 
 ![diagram](media/component%20diagram.png)
-
+[Mermaid Chart](https://www.mermaidchart.com/app/projects/0fab3230-accd-4ede-a88b-eed56db27918/diagrams/57f98020-6f98-40a6-a721-0f3d19c5dc70/version/v0.1/edit)
 ---
 
 ## 🗂️ Project Structure
