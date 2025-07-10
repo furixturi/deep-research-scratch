@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
-from .config_loader import load_default_config
-from .agent import run_agent
+
+from api.config_loader import load_default_config
+from api.agent import run_agent
 
 app = FastAPI(title="Deep Research Agent Server")
 default_config = load_default_config()

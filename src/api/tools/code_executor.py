@@ -1,4 +1,4 @@
-from tools import register_tool
+from api.tools import register_tool
 
 def code_handler(code: str) -> str:
     return f"Code executor stub, executed code: {code}"

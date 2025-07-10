@@ -1,2 +1,7 @@
 agent_type: single_agent
 model: openai
+tools:
+  search: 
+    description: "Search the web for information"
+  code: 
+    description: "Execute Python code"

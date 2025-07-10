@@ -1,4 +1,4 @@
-from tools import register_tool
+from api.tools import register_tool
 
 def search_handler(query: str) -> str:
     """

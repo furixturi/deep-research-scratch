@@ -1,7 +1,7 @@
 """Routing to single agent or multi-agent according to config"""
 
-from .single_agent import run_single_agent
-from .multi_agents.planner_agent import run_planner_agent
+from api.agent.single_agent import run_single_agent
+from api.agent.multi_agents.planner_agent import run_planner_agent
 
 
 async def run_agent(prompt: str, config: dict) -> str:
