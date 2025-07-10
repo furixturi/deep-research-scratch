@@ -12,7 +12,7 @@ AOAI_ENDPOINT = os.getenv("AOAI_ENDPOINT")
 AOAI_KEY = os.getenv("AOAI_KEY")
 AOAI_VERSION = os.getenv("AOAI_VERSION")
 ## OpenAI
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_KEY = os.getenv("OPENAI_KEY")
 
 # load default configuration
 # _default_config = load_default_config()
@@ -21,20 +21,22 @@ _supported_providers_models = _default_model_config.get("supported", {})
 
 
 # Model call dispatcher
-def call_model(messages: list, model_config: dict = {}, agent_id: str = "default") -> str:
+def call_model(
+    messages: list, model_config: dict = {}, agent_id: str = "default"
+) -> str:
     """
     Call the model with the provided messages and configuration.
 
     Args:
         messages (list): List of messages to send to the model.
-        model_config (dict): Configuration dictionary for the model call. 
+        model_config (dict): Configuration dictionary for the model call.
             E.g. {"provider": "aoai", "model": "gpt-4o"}
         agent_id (str): Identifier for the agent, default is "default".
 
     Returns:
         str: The response from the model.
     """
-    model_config = get_model_config(model_config, agent_id)
+    model_config = _get_model_config(model_config, agent_id)
     model_provider = model_config.get("provider", "")
     model = model_config.get("model", "")
 
@@ -59,7 +61,7 @@ def call_model(messages: list, model_config: dict = {}, agent_id: str = "default
         )
 
 
-def get_model_config(model_config: dict, agent_id: str = "default") -> tuple[dict, list[str]]:
+def _get_model_config(model_config: dict, agent_id: str = "default") -> dict:
     """
     Get the model configuration from default_config.yaml then override with the provided config and agent ID.
 
@@ -71,11 +73,19 @@ def get_model_config(model_config: dict, agent_id: str = "default") -> tuple[dic
         dict: Model configuration dictionary
     """
     default_agent_model_config = _default_model_config.get(agent_id, {})
-    model_config = {**_default_model_config.get("default", {}), **default_agent_model_config, **model_config}
+    model_config = {
+        **_default_model_config.get("default", {}),
+        **default_agent_model_config,
+        **model_config,
+    }
     if not model_config:
         raise ValueError(f"No model configuration found for agent ID: {agent_id}")
 
     return model_config
+
+
+def _is_oai_nextgen_model(model: str) -> bool:
+    return model.startswith("o")
 
 
 def call_aoai(messages: list, model: str) -> str:
@@ -90,19 +100,22 @@ def call_aoai(messages: list, model: str) -> str:
         str: The response from the Azure OpenAI model.
     """
     client = AzureOpenAI(
-        azure_endpoint=AOAI_ENDPOINT,
-        api_key=AOAI_KEY,
-        api_version=AOAI_VERSION
+        azure_endpoint=AOAI_ENDPOINT, api_key=AOAI_KEY, api_version=AOAI_VERSION
     )
-    
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        max_tokens=4096,
-        temperature=1.0,
-        top_p=1.0,
-    )
-    
+
+    kwargs = {
+        "model": model,
+        "messages": messages,
+        "temperature": 1.0,
+        "top_p": 1.0,
+    }
+
+    if _is_oai_nextgen_model(model):
+        kwargs["max_completion_tokens"] = 10000
+    else:
+        kwargs["max_tokens"] = 4096
+
+    response = client.chat.completions.create(**kwargs)
     return response.choices[0].message.content
 
 
@@ -118,15 +131,20 @@ def call_openai(messages: list, model: str) -> str:
         str: The response from the OpenAI model.
     """
     client = OpenAI(api_key=OPENAI_KEY)
-    
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        max_tokens=4096,
-        temperature=1.0,
-        top_p=1.0,
-    )
-    
+
+    kwargs = {
+        "model": model,
+        "messages": messages,
+        "temperature": 1.0,
+        "top_p": 1.0,
+    }
+
+    if _is_oai_nextgen_model(model):
+        kwargs["max_completion_tokens"] = 10000
+    else:
+        kwargs["max_tokens"] = 4096
+
+    response = client.chat.completions.create(**kwargs)
     return response.choices[0].message.content
 
 
