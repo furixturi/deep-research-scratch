@@ -93,3 +93,145 @@ INFO:     127.0.0.1:59413 - "POST /run_agent HTTP/1.1" 200 OK
 > Calling tool 'search' with input: NVIDIA revenue 2024
 < Tool 'search' returned: Simulated search result for query: NVIDIA revenue 2024
 ```
+
+## Hour 8.5-10.5 Model Config, Model Provider Integration, Model Router
+- Redesigned model config and added AOAI and OAI model configuration
+- Built AOAI and OAI model integration
+- Built model router and test
+
+## Hour 10.5-13 OpenAI Native Tool Call style
+- Debug single agent ReAct end to end flow
+- Refactor tools mechanism and registry
+- Align tools with OpenAI native tools format
+- Test and debug single agent ReAct flow with tool integration
+
+### Test end-to-end ReAct flow with tool integration
+```bash
+$ curl -X POST http://localhost:8000/run_agent \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "How much revenue did NVIDIA make in 2024?",
+    "config": {
+      "agent_type": "single_agent"
+    }
+  }'
+```
+
+Agent server debug logs
+```bash
+200 OK
+
+============================================================
+AGENT STARTING - AVAILABLE TOOLS:
+  • search: Search the web for information
+  • code: Execute Python code
+============================================================
+
+TOOL SCHEMAS:
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "search",
+      "description": "Search the web for information",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The search query to look for"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "code",
+      "description": "Execute Python code",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The Python code to execute"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      }
+    }
+  }
+]
+
+============================================================
+
+USER QUESTION: How much revenue did NVIDIA make in 2024?
+============================================================
+
+=== STEP 1 ===
+
+- Model Router DEBUG: Passing messages to AOAI model: {'role': 'user', 'content': 'How much revenue did NVIDIA make in 2024?'}
+
+- Model Router DEBUG: Passing 2 tools to AOAI model
+- Model Router DEBUG: Tools: ['search', 'code']
+
+*** Raw response ***
+ ChatCompletionMessage(content=None, refusal=None, role='assistant', annotations=[], audio=None, function_call=None, tool_calls=[ChatCompletionMessageToolCall(id='call_zE8kaafT2EvYoT4OmwCWLpNB', function=Function(arguments='{"query":"NVIDIA revenue for 2024"}', name='search'), type='function')])
+
+### Response has Tool Calls ###
+Tool calls: 1
+> Tool name: search
+> Tool arg: {"query":"NVIDIA revenue for 2024"}
+> Tool call ID: call_zE8kaafT2EvYoT4OmwCWLpNB
+< Tool result: Simulated search result for query: NVIDIA revenue for 2024
+
+=== STEP 2 ===
+
+- Model Router DEBUG: Passing messages to AOAI model: {'role': 'tool', 'tool_call_id': 'call_zE8kaafT2EvYoT4OmwCWLpNB', 'content': 'Simulated search result for query: NVIDIA revenue for 2024'}
+
+- Model Router DEBUG: Passing 2 tools to AOAI model
+- Model Router DEBUG: Tools: ['search', 'code']
+
+*** Raw response ***
+ ChatCompletionMessage(content='Thought: The search query did not yield updated results for NVIDIA\'s 2024 revenue. As 2024 is ongoing, there may be quarterly revenue reports instead of the full year\'s data available. I will refine my search to look for recent quarterly earnings updates for NVIDIA in 2024.\n\nAction: Search\nAction Input: "NVIDIA Q1 Q2 revenue 2024 earnings results"', refusal=None, role='assistant', annotations=[], audio=None, function_call=None, tool_calls=[ChatCompletionMessageToolCall(id='call_kuQ1gJ1sxhr4fIm00oU0W2Yp', function=Function(arguments='{"query":"NVIDIA Q1 Q2 revenue 2024 earnings results"}', name='search'), type='function')])
+
+### Response has Tool Calls ###
+Tool calls: 1
+
+### Response also has TEXT ###
+- Thought: The search query did not yield updated results for NVIDIA's 2024 revenue. As 2024 is ongoing, there may be quarterly revenue reports instead of the full year's data available. I will refine my search to look for recent quarterly earnings updates for NVIDIA in 2024.
+- Action: Search
+- Action Input: "NVIDIA Q1 Q2 revenue 2024 earnings results"
+> Tool name: search
+> Tool arg: {"query":"NVIDIA Q1 Q2 revenue 2024 earnings results"}
+> Tool call ID: call_kuQ1gJ1sxhr4fIm00oU0W2Yp
+< Tool result: Simulated search result for query: NVIDIA Q1 Q2 revenue 2024 earnings results
+
+=== STEP 3 ===
+
+- Model Router DEBUG: Passing messages to AOAI model: {'role': 'tool', 'tool_call_id': 'call_kuQ1gJ1sxhr4fIm00oU0W2Yp', 'content': 'Simulated search result for query: NVIDIA Q1 Q2 revenue 2024 earnings results'}
+
+- Model Router DEBUG: Passing 2 tools to AOAI model
+- Model Router DEBUG: Tools: ['search', 'code']
+
+*** Raw response ***
+ Thought: Based on the simulated search results, the exact revenue from NVIDIA for 2024 is not provided directly. Quarterly data might need to be aggregated when available. Alternatively, no official data for fiscal year 2024 may yet be complete.
+
+Final Answer: NVIDIA's total revenue for 2024 is not finalized as the year is ongoing. You can check quarterly financial reports (e.g., Q1, Q2) released by NVIDIA to estimate their revenue for 2024. For accurate and updated information, visit NVIDIA's official investor relations website or view their SEC filings.
+
+### Response is TEXT only ###
+Thought: Based on the simulated search results, the exact revenue from NVIDIA for 2024 is not provided directly. Quarterly data might need to be aggregated when available. Alternatively, no official data for fiscal year 2024 may yet be complete.
+
+Final Answer: NVIDIA's total revenue for 2024 is not finalized as the year is ongoing. You can check quarterly financial reports (e.g., Q1, Q2) released by NVIDIA to estimate their revenue for 2024. For accurate and updated information, visit NVIDIA's official investor relations website or view their SEC filings.
+```
+
+Response to curl command
+```bash
+{"response":"NVIDIA's total revenue for 2024 is not finalized as the year is ongoing. You can check quarterly financial reports (e.g., Q1, Q2) released by NVIDIA to estimate their revenue for 2024. For accurate and updated information, visit NVIDIA's official investor relations website or view their SEC filings."}
+```
