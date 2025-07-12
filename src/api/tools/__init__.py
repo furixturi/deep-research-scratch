@@ -1,4 +1,4 @@
-from typing import Dict, Callable
+from typing import Dict, Callable, List
 
 tool_registry : Dict[str, Callable] = {}
 
@@ -48,3 +48,31 @@ def get_tool_handler(name: str) -> Callable:
         raise ValueError(f"Tool '{name}' is not registered.")
     
     return tool_registry[name]["handler"]
+
+def get_openai_tools() -> List[Dict]:
+    """
+    Convert internal tools to OpenAI tool format.
+    
+    Returns:
+        List[Dict]: List of tools in OpenAI format for API calls.
+    """
+    openai_tools = []
+    for tool_name, description in get_available_tools().items():
+        openai_tools.append({
+            "type": "function",
+            "function": {
+                "name": tool_name,
+                "description": description,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The input query for the tool"
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        })
+    return openai_tools
