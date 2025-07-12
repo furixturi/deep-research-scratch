@@ -1,4 +1,4 @@
-from api.tools import register_tool
+from api.tools.registry import register_tool
 
 
 def code_handler(code: str) -> str:

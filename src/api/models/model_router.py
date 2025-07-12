@@ -130,6 +130,10 @@ def call_aoai(
     if tools:
         kwargs["tools"] = tools
         kwargs["tool_choice"] = "auto"
+        print(f"DEBUG: Passing {len(tools)} tools to AOAI model")
+        print(f"DEBUG: Tools: {[tool['function']['name'] for tool in tools]}")
+    else:
+        print(f"DEBUG: No tools provided to AOAI model")
 
     if _is_oai_nextgen_model(model):
         kwargs["max_completion_tokens"] = 10000
@@ -173,6 +177,10 @@ def call_openai(
     if tools:
         kwargs["tools"] = tools
         kwargs["tool_choice"] = "auto"
+        print(f"DEBUG: Passing {len(tools)} tools to OpenAI model")
+        print(f"DEBUG: Tools: {[tool['function']['name'] for tool in tools]}")
+    else:
+        print(f"DEBUG: No tools provided to OpenAI model")
 
     if _is_oai_nextgen_model(model):
         kwargs["max_completion_tokens"] = 10000

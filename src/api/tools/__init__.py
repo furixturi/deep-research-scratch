@@ -1,78 +1,78 @@
-from typing import Dict, Callable, List
+from typing import Dict, Callable, List, Optional, Any
+from api.tools.registry import tool_registry
 
-tool_registry : Dict[str, Callable] = {}
-
-def register_tool(name: str, description: str, handler: Callable):
-    """
-    Register a tool with a name, description, and handler function.
-    
-    Args:
-        name (str): The name of the tool.
-        description (str): A brief description of what the tool does.
-        handler (Callable): The function that implements the tool's functionality.
-
-    Raises:
-        ValueError: If a tool with the same name is already registered.
-    """
-    if name in tool_registry:
-        raise ValueError(f"Tool '{name}' is already registered.")
-    
-    tool_registry[name] = {
-        "description": description,
-        "handler": handler
-    }
 
 def get_available_tools() -> Dict[str, str]:
     """
     Get a dictionary of available tools with their descriptions.
-    
-    Returns:
-        Dict[str, str]: A dictionary where keys are tool names and values are their descriptions.
-    """
-    return {name: data["description"] for name, data in tool_registry.items()}
 
-def get_tool_handler(name: str) -> Callable:    
-    """
-    Get the handler function for a registered tool.
-    
-    Args:
-        name (str): The name of the tool.
-        
     Returns:
-        Callable: The handler function for the tool.
-        
-    Raises:
-        ValueError: If the tool is not registered.
+        Dict[str, str]: A dictionary where keys are tool names and
+        values are their descriptions.
     """
-    if not name in tool_registry:
-        raise ValueError(f"Tool '{name}' is not registered.")
-    
-    return tool_registry[name]["handler"]
+    return {
+        name: data["description"]
+        for name, data in tool_registry.items()
+    }
 
-def get_openai_tools() -> List[Dict]:
+
+def get_tools_openai_format() -> List[Dict]:
     """
     Convert internal tools to OpenAI tool format.
-    
+
     Returns:
         List[Dict]: List of tools in OpenAI format for API calls.
     """
     openai_tools = []
-    for tool_name, description in get_available_tools().items():
-        openai_tools.append({
-            "type": "function",
-            "function": {
-                "name": tool_name,
-                "description": description,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "The input query for the tool"
-                        }
-                    },
-                    "required": ["query"]
-                }
+    for tool_name, tool_data in tool_registry.items():
+        openai_tools.append(
+            {
+                "type": "function",
+                "function": {
+                    "name": tool_name,
+                    "description": tool_data["description"],
+                    "parameters": tool_data["parameters"],
+                },
             }
-        })
+        )
     return openai_tools
+
+
+def execute_tool(tool_name: str, tool_args: Dict[str, Any]) -> str:
+    """
+    Execute a tool with the given arguments.
+
+    Args:
+        tool_name (str): The name of the tool to execute.
+        tool_args (Dict[str, Any]): The arguments to pass to the tool.
+
+    Returns:
+        str: The result from the tool execution.
+
+    Raises:
+        ValueError: If the tool is not registered.
+    """
+    if tool_name not in tool_registry:
+        raise ValueError(f"Tool '{tool_name}' is not registered.")
+
+    handler = tool_registry[tool_name]["handler"]
+
+    # For tools that expect a single argument, try to extract it
+    # Otherwise, pass the full arguments dict
+    try:
+        # Try to call with unpacked arguments first
+        return handler(**tool_args)
+    except TypeError:
+        # If that fails, try with a single argument
+        # This handles legacy tools that expect a single string parameter
+        if len(tool_args) == 1:
+            return handler(next(iter(tool_args.values())))
+        else:
+            # If multiple args but handler doesn't support **kwargs,
+            # pass the whole dict
+            return handler(tool_args)
+
+
+# Import tools to register them - clean and explicit
+from api.tools import search
+from api.tools import code_executor

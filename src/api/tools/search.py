@@ -1,16 +1,18 @@
-from api.tools import register_tool
+from api.tools.registry import register_tool
+
 
 def search_handler(query: str) -> str:
     """
     Simulate a search tool that returns a fixed response.
-    
+
     Args:
         query (str): The search query.
-        
+
     Returns:
         str: A simulated search result.
     """
     return f"Simulated search result for query: {query}"
+
 
 # Register with explicit parameters schema
 register_tool(
@@ -22,9 +24,9 @@ register_tool(
         "properties": {
             "query": {
                 "type": "string",
-                "description": "The search query to look for"
+                "description": "The search query to look for",
             }
         },
-        "required": ["query"]
-    }
+        "required": ["query"],
+    },
 )
