@@ -11,8 +11,14 @@ class Memory:
     def add_model_step(self, content: str):
         self.messages.append({"role": "assistant", "content": content})
 
-    def add_tool_step(self, content: str):
-        self.messages.append({"role": "tool", "content": content})
+    def add_tool_step(self, tool_call_id: str, content: str):
+        self.messages.append(
+            {
+                "role": "tool",
+                "tool_call_id": tool_call_id,
+                "content": content,
+            }
+        )
 
     def get_messages(self):
         return self.messages.copy()

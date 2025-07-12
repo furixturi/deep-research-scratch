@@ -7,14 +7,20 @@ from api.tools import search
 
 tools = get_available_tools()
 SYSTEM_PROMPT = (
-    "You are a helpful research assistant. You think step by step and use tools when needed. \n"
+    "You are a helpful research assistant. "
+    "You think step by step and use tools when needed. \n"
     "Available tools:\n"
-    + "\n".join(f"- {tool}: {description}" for tool, description in tools.items()) + "\n"
+    + "\n".join(
+        f"- {tool}: {description}"
+        for tool, description in tools.items()
+    )
+    + "\n"
     "Respond using this format:\n"
     "Thought: <your reasoning>\n"
     "Action: <tool name or Final Answer>\n"
     "Action Input: <input to tool or answer>\n"
 )
+
 
 # ReAct Agent Loop
 async def run_single_agent(prompt: str, config: dict) -> str:
@@ -29,23 +35,31 @@ async def run_single_agent(prompt: str, config: dict) -> str:
         step_count += 1
 
         response = call_model(memory.get_messages(), config)
+
         memory.add_model_step(response)
 
         # Parse model output
         lines = response.strip().splitlines()
-        thought = next((l for l in lines if l.startswith("Thought:")), "")
+        thought = next(
+            (l for l in lines if l.startswith("Thought:")), ""
+        )
         action = next((l for l in lines if l.startswith("Action:")), "")
-        action_input = next((l for l in lines if l.startswith("Action Input:")), "")
+        action_input = next(
+            (l for l in lines if l.startswith("Action Input:")), ""
+        )
 
         # Debug print
-        print(f" --- Step {step_count} ---\n Thought: {thought}\n Action: {action}\n Action Input: {action_input}")
+        print(
+            f" --- Step {step_count} ---\n {thought}\n {action}\n "
+            f"{action_input}"
+        )
 
         if not action:
             return "[Error: Model did not return an Action.]"
-        
+
         if action == "Action: Final Answer":
             return action_input.replace("Action Input:", "").strip()
-        
+
         # Dummy tool simulation
         tool_name = action.replace("Action:", "").strip()
         tool_input = action_input.replace("Action Input:", "").strip()
@@ -59,12 +73,8 @@ async def run_single_agent(prompt: str, config: dict) -> str:
 
         # Debug print
         print(f"< Tool '{tool_name}' returned: {observation}\n")
-    
+
     return f"[Stopped after {max_steps} steps - no final answer]"
-
-
-
-
 
 
 ##############
